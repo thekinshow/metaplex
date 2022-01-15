@@ -6,6 +6,8 @@ import { BN, Program, web3 } from '@project-serum/anchor';
 import { Token, TOKEN_PROGRAM_ID } from '@solana/spl-token';
 import { StorageType } from './storage-type';
 import { getAtaForMint } from './accounts';
+import { CLUSTERS, DEFAULT_CLUSTER } from './constants';
+import { Uses, UseMethod } from '@metaplex-foundation/mpl-token-metadata';
 
 const { readFile } = fs.promises;
 
@@ -45,6 +47,9 @@ export async function getCandyMachineV2Config(
   uuid: string;
   arweaveJwk: string;
 }> {
+  if (configPath === undefined) {
+    throw new Error('The configPath is undefined');
+  }
   const configString = fs.readFileSync(configPath);
 
   //@ts-ignore
@@ -495,3 +500,23 @@ export const getPriceWithMantissa = async (
 
   return Math.ceil(price * mantissa);
 };
+
+export function getCluster(name: string): string {
+  for (const cluster of CLUSTERS) {
+    if (cluster.name === name) {
+      return cluster.url;
+    }
+  }
+  return DEFAULT_CLUSTER.url;
+}
+
+export function parseUses(useMethod: string, total: number): Uses | null {
+  if (!!useMethod && !!total) {
+    const realUseMethod = (UseMethod as any)[useMethod];
+    if (!realUseMethod) {
+      throw new Error(`Invalid use method: ${useMethod}`);
+    }
+    return new Uses({ useMethod: realUseMethod, total, remaining: total });
+  }
+  return null;
+}
